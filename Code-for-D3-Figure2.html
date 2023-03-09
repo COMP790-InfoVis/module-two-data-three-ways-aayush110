@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js. -->
+<script src="https://d3js.org/d3.v6.js"></script>
+
+<!-- Create the div for the graph --> 
+<div id="chart"></div>
+
+<script>
+// Setting dimensions and margins
+const margin = {top: 10, right: 30, bottom: 100, left:60},
+		width = 800 - margin.left - margin.right, 
+		height = 400 - margin.top - margin.bottom; 
+		
+const svg = d3.select("#chart")
+			.append("svg")
+			.attr("width", width + margin.left + margin.right)
+			.attr("height", height + margin.top + margin.bottom)
+			.append("g")
+			.attr("transform", `translate(${margin.left}, ${margin.top})`);
+			
+
+d3.csv("los angeles 2023-01-01 to 2023-03-01.csv", function(d){
+	return {
+		datetime: d['datetime'],
+		temp: +d['temp'],
+		windgust: +d['windgust'],
+        icon: +d['icon']
+		// region: d['Region'],
+		// country: d['Country']
+	}
+}).then(function(data){
+	// Add X Scale
+	const x = d3.scaleBand()
+				.domain(data.map(d => d.datetime))
+				.range([0, width])
+				.padding(0.2);
+
+				
+	// Add Y Scale 
+	const y = d3.scaleLinear()
+				.domain([0, d3.max(data, d => d.windgust)])
+				.range([height, 0]);
+				
+	const color = d3.scaleOrdinal()
+					.domain(data.map(d => d.icon))
+					.range(d3.schemeSet3)
+		
+	// Add axes
+	svg.append("g")
+		.attr("transform", `translate(0, ${height})`)
+		.call(d3.axisBottom(x).ticks(3))
+	    .selectAll("text") .attr("transform", "translate(-10,10)rotate(-90)") .style("text-anchor", "end") .style("font-size", 10) .style("fill", "#69a3b2");
+
+		
+
+	svg.append("text")
+	    .attr("transform", "translate(" + (width/3) + " ," + (height + 80) + ")")
+        .style("text-anchor", "middle")
+        .text("Dates");	
+		
+	svg.append("g")
+		.call(d3.axisLeft(y));
+
+	svg.append("text")
+	    .attr("transform", "rotate(-90)")
+        .attr("x", -(height/2))
+        .attr("y", -28)
+        .style("text-anchor", "middle")
+        .text("Wind Gust Levels");	
+		
+	svg.append('g')
+		.selectAll("dot")
+		.data(data)
+		.join("rect")
+			.attr("x", function(d) { return x(d.datetime);})
+			.attr("y", function(d) { return y(d.windgust)})
+			.attr("width", function(d) { return x.bandwidth()})
+			.attr("height", function(d) { return height - y(d.windgust)})
+			.style("fill", function(d) { return color(d.icon)})
+
+	svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(x)
+    .selectAll("text")  
+    .style("text-anchor", "end")
+    .attr("dx", "-.8em")
+    .attr("dy", ".15em")
+    .attr("transform", "rotate(-65)");	
+
+	
+	
+//     svg.append("text")
+//     .attr("transform", "rotate(-90)")
+// .attr("y", 0 - margin.left)
+// .attr("x",0 - (height / 2))
+// .attr("dy", "1em")
+// .style("text-anchor", "middle")
+// .text("Value")
+})
+</script>
